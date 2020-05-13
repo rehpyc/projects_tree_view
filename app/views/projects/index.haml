@@ -1,0 +1,62 @@
+- content_for :header_tags do
+  = javascript_include_tag :projects_tree_view, plugin: :projects_tree_view
+  = stylesheet_link_tag    :projects_tree_view, plugin: :projects_tree_view
+  = auto_discovery_link_tag(:atom, { action: "index", format: "atom", key: User.current.rss_key })
+
+%div.contextual
+  = link_to(l(:label_project_new), new_project_url,    class: "icon icon-add"      ) if User.current.allowed_to?(:add_project,    nil, global: true)
+  = link_to(l(:label_settings),    admin_projects_url, class: "icon icon-settings" ) if User.current.allowed_to?(:admin_projects, nil, global: true)
+%h2
+  = l(:label_project_plural)
+
+%p
+  = link_to(l(:expand_all), "#", :onclick => "expandAll()")
+  %span #{ " | " }
+  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()")
+
+- show_project_progress = Setting.plugin_projects_tree_view[:show_project_progress]
+%table.list
+  %thead
+    %tr
+      %th #{ l(:label_project) }
+      %th #{ l(:field_description) }
+      %th #{ l(:field_go_to) }
+      - if show_project_progress
+        %th #{ l(:field_versions) }
+      %th #{ l(:field_created_on) }
+  %tbody
+    - ancestors = []
+    - plevel = 0
+    - project_tree(@entries) do |project, level|
+
+      - project_id = "%04d" % project.id
+      - (plevel - level).times { ancestors.pop } if (level < plevel)
+      - has_children = !project.children.empty?
+      - level_style  = 0 < level ? "hide #{ ancestors.last }" : cycle("odd", "even")
+
+      %tr{ id: "#{ project_id }", class: "#{ project.css_classes } #{ level_style }" }
+        %td.name{ style: "padding-left: #{ 18 * level }px" }
+          - if has_children
+            %span.expander{ onclick: "toggleShowHide('#{ project_id }')" }
+          = project.active? ? link_to_project(project) : h(project.name)
+          %span{ class: "empty #{ "my-project" if User.current.member_of?(project) }" }
+        %td #{ textilizable(project.short_description.gsub(/\!.+\!/,""), :project => project) }
+        %td #{ favorite_project_modules_links(project) }
+        - if show_project_progress
+          %td #{ render_project_progress(project) }
+        %td{ style: "align='center'" } #{ format_date(project.created_on) }
+      - ancestors << project_id if has_children
+      - plevel = level
+%p
+  = link_to(l(:expand_all), "#", :onclick => "expandAll()")
+  %span #{ " | " }
+  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()")
+
+- if User.current.logged?
+  %p{ style: "text-align:right;" }
+    %span.icon.icon-user.my-project #{ l(:label_my_projects) }
+
+- other_formats_links do |f|
+  = f.link_to('Atom', url: { key: User.current.rss_key })
+
+- html_title(l(:label_project_plural))
