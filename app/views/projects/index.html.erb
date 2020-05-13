@@ -33,7 +33,7 @@
   <tbody>
     <% ancestors = [] %>
     <% plevel = 0 %>
-    <% project_tree(@projects) do |project, level| %>
+    <% project_tree(@entries) do |project, level| %>
       <% project_id = "%04d" % project.id %>
       <%  (plevel - level).times { ancestors.pop } if (level < plevel) %>
       <% has_children = !project.children.empty? %>
