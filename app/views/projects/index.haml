@@ -10,47 +10,52 @@
   = l(:label_project_plural)
 
 %p
-  = link_to(l(:expand_all), "#", :onclick => "expandAll()")
+  = link_to(l(:expand_all), "#", :onclick => "expandAll()", class: "expand")
   %span #{ " | " }
-  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()")
+  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()", class: "collapse")
 
 - show_project_progress = Setting.plugin_projects_tree_view[:show_project_progress]
 %table.list
   %thead
     %tr
-      %th #{ l(:label_project) }
-      %th #{ l(:field_description) }
-      %th #{ l(:field_go_to) }
-      - if show_project_progress
-        %th #{ l(:field_versions) }
-      %th #{ l(:field_created_on) }
+      %th{ style: "width: 25%" } #{ l(:label_project) }
+      %th{ style: "width: 15%" } #{ l(:label_roadmap) }
+      %th{ style: "width: 15%" } #{ l(:label_issue)   }
+      %th{ style: "width: 10%" } #{ l(:label_done_late)  }
+      %th{ style: "width: 10%" } #{ l(:field_created_on) }
   %tbody
-    - ancestors = []
+    - ancestors = [ ]
     - plevel = 0
     - project_tree(@entries) do |project, level|
-
-      - project_id = "%04d" % project.id
-      - (plevel - level).times { ancestors.pop } if (level < plevel)
-      - has_children = !project.children.empty?
-      - level_style  = 0 < level ? "hide #{ ancestors.last }" : cycle("odd", "even")
-
-      %tr{ id: "#{ project_id }", class: "#{ project.css_classes } #{ level_style }" }
+      - style    = 0 < level ? "hide #{ ancestors.last }" : cycle("odd", "even")
+      - statices = progress_statices(project)
+      %tr{ id: "#{ project.id }", class: "#{ project.css_classes } #{ style }" }
         %td.name{ style: "padding-left: #{ 18 * level }px" }
-          - if has_children
-            %span.expander{ onclick: "toggleShowHide('#{ project_id }')" }
+          - unless project.children.empty?
+            %span.expander{ style: "padding-left: 20px", onclick: "toggleShowHide('#{ project.id }')" }
           = project.active? ? link_to_project(project) : h(project.name)
           %span{ class: "empty #{ "my-project" if User.current.member_of?(project) }" }
-        %td #{ textilizable(project.short_description.gsub(/\!.+\!/,""), :project => project) }
-        %td #{ favorite_project_modules_links(project) }
-        - if show_project_progress
-          %td #{ render_project_progress(project) }
-        %td{ style: "align='center'" } #{ format_date(project.created_on) }
-      - ancestors << project_id if has_children
+        %td
+          - unless project.versions.blank?
+            = link_to(project_roadmap_url(project.id)) do
+              = "#{ project.versions.length } #{ l(:label_version) }" unless project.versions.blank?
+        %td
+          = link_to(l(:label_x_issues, count: statices[:total]), issues_url(project_id: project, set_filter: 1, status_id: "*"))
+          (
+          = link_to_if(0 < statices[:open], l(:label_x_open_issues_abbr, count: statices[:open]), issues_url(project_id: project, set_filter: 1, status_id: "open"))
+          &#8212;
+          = link_to_if(0 < statices[:closed], l(:label_x_closed_issues_abbr, count: statices[:closed]), issues_url(project_id: project, set_filter: 1, status_id: "closed"))
+          )
+        %td 
+          = progress_bar(statices[:rate], legend: "#{ '%i%%' % statices[:rate] }")
+        %td{ align: "center" } 
+          = "#{ format_date(project.created_on) }"
+      - ancestors << project.id unless project.children.empty?
       - plevel = level
 %p
-  = link_to(l(:expand_all), "#", :onclick => "expandAll()")
+  = link_to(l(:expand_all), "#", :onclick => "expandAll()", class: "expand")
   %span #{ " | " }
-  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()")
+  = link_to(l(:collapse_all), "#", :onclick => "collapseAll()", class: "collapse")
 
 - if User.current.logged?
   %p{ style: "text-align:right;" }

@@ -1,9 +1,9 @@
 en:
-  # English strings go here
-
   field_versions: "Versions"
   field_go_to: Go to module
-  subprojects: sub projects
-  expand_all: "Expand All"
-  collapse_all: "Collapse All"
   show_progress: "Show project progress"
+  subprojects: sub projects
+  
+  expand_all:      "Expand All"
+  collapse_all:    "Collapse All"
+  label_done_late: "Done"
